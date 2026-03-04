@@ -12,14 +12,10 @@ from app.db import get_client
 from app.whatsapp.models import (
     MessageLogOut,
     ScheduledMessageOut,
-    ServiceRuleCreate,
     ServiceRuleOut,
-    TemplateCreate,
     TemplateOut,
-    TemplateUpdate,
     WebhookPayload,
     WhatsappConfigOut,
-    WhatsappConfigUpsert,
 )
 from app.whatsapp.service import handle_order_delivered, process_scheduled_messages
 
@@ -71,11 +67,12 @@ async def order_status_changed(
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Config
+# Config (read-only; dashboard writes directly to Supabase)
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/whatsapp/config", response_model=WhatsappConfigOut)
 def get_config(payload: dict = Depends(verify_jwt)):
+    """Get WhatsApp config for the company (for verification/auditing)."""
     company_id = _company_id_from_jwt(payload)
     db = get_client()
     res = db.table("whatsapp_config").select("*").eq("company_id", company_id).maybe_single().execute()
@@ -84,109 +81,30 @@ def get_config(payload: dict = Depends(verify_jwt)):
     return res.data
 
 
-@router.post("/whatsapp/config", response_model=WhatsappConfigOut)
-def upsert_config(body: WhatsappConfigUpsert, payload: dict = Depends(verify_jwt)):
-    company_id = _company_id_from_jwt(payload)
-    db = get_client()
-    data = {
-        "company_id": company_id,
-        "phone_number_id": body.phone_number_id,
-        "access_token": body.access_token,
-        "is_active": body.is_active,
-        "updated_at": "now()",
-    }
-    res = (
-        db.table("whatsapp_config")
-        .upsert(data, on_conflict="company_id")
-        .execute()
-    )
-    return res.data[0]
-
-
 # ══════════════════════════════════════════════════════════════════════════════
-# Templates
+# Templates (read-only; dashboard writes directly to Supabase)
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/whatsapp/templates", response_model=list[TemplateOut])
 def list_templates(payload: dict = Depends(verify_jwt)):
+    """List all WhatsApp templates for the company (for verification/auditing)."""
     company_id = _company_id_from_jwt(payload)
     db = get_client()
     res = db.table("whatsapp_templates").select("*").eq("company_id", company_id).execute()
     return res.data or []
 
 
-@router.post("/whatsapp/templates", response_model=TemplateOut, status_code=201)
-def create_template(body: TemplateCreate, payload: dict = Depends(verify_jwt)):
-    company_id = _company_id_from_jwt(payload)
-    db = get_client()
-    res = db.table("whatsapp_templates").insert({
-        "company_id": company_id,
-        "name": body.name,
-        "body": body.body,
-        "trigger_type": body.trigger_type.value,
-        "is_active": body.is_active,
-    }).execute()
-    return res.data[0]
-
-
-@router.put("/whatsapp/templates/{template_id}", response_model=TemplateOut)
-def update_template(template_id: UUID, body: TemplateUpdate, payload: dict = Depends(verify_jwt)):
-    company_id = _company_id_from_jwt(payload)
-    db = get_client()
-    updates = body.model_dump(exclude_none=True)
-    if "trigger_type" in updates:
-        updates["trigger_type"] = updates["trigger_type"].value
-    updates["updated_at"] = "now()"
-    res = (
-        db.table("whatsapp_templates")
-        .update(updates)
-        .eq("id", str(template_id))
-        .eq("company_id", company_id)
-        .execute()
-    )
-    if not res.data:
-        raise HTTPException(status_code=404, detail="Template not found")
-    return res.data[0]
-
-
-@router.delete("/whatsapp/templates/{template_id}", status_code=204)
-def delete_template(template_id: UUID, payload: dict = Depends(verify_jwt)):
-    company_id = _company_id_from_jwt(payload)
-    db = get_client()
-    db.table("whatsapp_templates").delete().eq("id", str(template_id)).eq("company_id", company_id).execute()
-
-
 # ══════════════════════════════════════════════════════════════════════════════
-# Service Rules
+# Service Rules (read-only; dashboard writes directly to Supabase)
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/whatsapp/service-rules", response_model=list[ServiceRuleOut])
 def list_service_rules(payload: dict = Depends(verify_jwt)):
+    """List all WhatsApp service rules for the company (for verification/auditing)."""
     company_id = _company_id_from_jwt(payload)
     db = get_client()
     res = db.table("whatsapp_service_rules").select("*").eq("company_id", company_id).execute()
     return res.data or []
-
-
-@router.post("/whatsapp/service-rules", response_model=ServiceRuleOut, status_code=201)
-def create_service_rule(body: ServiceRuleCreate, payload: dict = Depends(verify_jwt)):
-    company_id = _company_id_from_jwt(payload)
-    db = get_client()
-    res = db.table("whatsapp_service_rules").insert({
-        "company_id": company_id,
-        "service_id": str(body.service_id),
-        "template_id": str(body.template_id),
-        "delay_days": body.delay_days,
-        "is_active": body.is_active,
-    }).execute()
-    return res.data[0]
-
-
-@router.delete("/whatsapp/service-rules/{rule_id}", status_code=204)
-def delete_service_rule(rule_id: UUID, payload: dict = Depends(verify_jwt)):
-    company_id = _company_id_from_jwt(payload)
-    db = get_client()
-    db.table("whatsapp_service_rules").delete().eq("id", str(rule_id)).eq("company_id", company_id).execute()
 
 
 # ══════════════════════════════════════════════════════════════════════════════

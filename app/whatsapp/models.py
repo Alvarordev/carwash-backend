@@ -23,12 +23,6 @@ class MessageStatus(str, Enum):
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
-class WhatsappConfigUpsert(BaseModel):
-    phone_number_id: str
-    access_token: str
-    is_active: bool = True
-
-
 class WhatsappConfigOut(BaseModel):
     id: UUID
     company_id: UUID
@@ -39,20 +33,6 @@ class WhatsappConfigOut(BaseModel):
 
 
 # ── Templates ──────────────────────────────────────────────────────────────────
-
-class TemplateCreate(BaseModel):
-    name: str
-    body: str
-    trigger_type: TriggerType
-    is_active: bool = True
-
-
-class TemplateUpdate(BaseModel):
-    name: Optional[str] = None
-    body: Optional[str] = None
-    trigger_type: Optional[TriggerType] = None
-    is_active: Optional[bool] = None
-
 
 class TemplateOut(BaseModel):
     id: UUID
@@ -66,13 +46,6 @@ class TemplateOut(BaseModel):
 
 
 # ── Service Rules ──────────────────────────────────────────────────────────────
-
-class ServiceRuleCreate(BaseModel):
-    service_id: UUID
-    template_id: UUID
-    delay_days: int = 30
-    is_active: bool = True
-
 
 class ServiceRuleOut(BaseModel):
     id: UUID
