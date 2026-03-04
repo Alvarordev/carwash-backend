@@ -7,8 +7,9 @@ from contextlib import asynccontextmanager
 from functools import partial
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 
+from app.auth import verify_jwt
 from app.detector import warmup as warmup_detector
 from app.ocr import warmup as warmup_ocr
 from app.pipeline import analyze
@@ -64,7 +65,7 @@ app.include_router(whatsapp_router)
 
 
 @app.post("/analyze-vehicle")
-async def analyze_vehicle(image: UploadFile = File(...)):
+async def analyze_vehicle(image: UploadFile = File(...), _: dict = Depends(verify_jwt)):
     if image.content_type and not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image.")
 
