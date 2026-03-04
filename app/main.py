@@ -6,12 +6,15 @@ import os
 from contextlib import asynccontextmanager
 from functools import partial
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
 
 from app.detector import warmup as warmup_detector
 from app.ocr import warmup as warmup_ocr
 from app.pipeline import analyze
 from app.whatsapp.router import router as whatsapp_router
+
+load_dotenv()
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 logger = logging.getLogger(__name__)
