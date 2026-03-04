@@ -15,4 +15,6 @@ COPY . .
 # Commenting out pre-download to avoid OOM during build
 
 EXPOSE 8000
-CMD ["gunicorn", "app.main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+# Use 1 worker to avoid concurrent PaddleOCR model downloads
+# Can scale to more workers after models are cached
+CMD ["gunicorn", "app.main:app", "--workers", "1", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
