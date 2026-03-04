@@ -1,24 +1,34 @@
 from __future__ import annotations
 
-import os
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+
+from app.db import get_client
 
 bearer_scheme = HTTPBearer()
 
 
-def verify_jwt(
+async def verify_jwt(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> dict:
+    """Verify a Supabase JWT by calling auth.get_user().
+
+    Works with both legacy HS256 secrets and new asymmetric JWT Signing Keys.
+    Returns the user object from Supabase Auth.
+    """
     token = credentials.credentials
-    secret = os.environ["SUPABASE_JWT_SECRET"]
     try:
-        payload = jwt.decode(token, secret, algorithms=["HS256"], audience="authenticated")
-    except JWTError as exc:
+        response = get_client().auth.get_user(token)
+        if not response or not response.user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired token",
+            )
+        return response.user.model_dump()
+    except HTTPException:
+        raise
+    except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid token: {exc}",
+            detail=f"Token verification failed: {exc}",
         )
-    return payload

@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 _REQUIRED_ENV_VARS = [
     "SUPABASE_URL",
     "SUPABASE_SERVICE_ROLE_KEY",
-    "SUPABASE_JWT_SECRET",
     "WEBHOOK_SECRET",
 ]
 
