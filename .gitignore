@@ -29,3 +29,4 @@ images
 # App model files (large ONNX models)
 app/models/
 .claude
+CLAUDE.md

@@ -1,0 +1,13 @@
+services:
+  api:
+    image: ghcr.io/alvarordev/carwash-backend:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file: .env
+    volumes:
+      - paddleocr_cache:/root/.paddleocr
+      - ./app/models:/app/app/models
+
+volumes:
+  paddleocr_cache:
