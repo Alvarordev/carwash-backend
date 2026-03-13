@@ -23,8 +23,9 @@ env/
 .DS_Store
 
 # Model weights & large binaries
-weights/
-images/
+weights
+images
 
 # App model files (large ONNX models)
 app/models/
+.claude
